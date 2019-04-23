@@ -10,6 +10,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.models import Model,load_model
 import tensorflow as tf
 import numpy as np
+import os
 
 def get_sub_model(myinputs,channel=3,sensors=1,multi=1):
     x     = Conv1D(filters =8*sensors*multi, kernel_size=5,strides = 1, padding = 'same')(myinputs)
@@ -79,6 +80,7 @@ def build_model(name="push_detect",channel=3,sensors=1,multi=1):
     return autoencoder
 
 if __name__=='__main__':
+    os.environ["CUDA_VISIBLE_DEVICES"]="0"
     fullModel=build_model(channel=26,sensors=8,multi=4)
     opt = keras.optimizers.SGD(lr=0.1, momentum=0.0, decay=0.000, nesterov=False)
     fullModel.compile(optimizer=opt,loss='mse',metrics=['accuracy'])
