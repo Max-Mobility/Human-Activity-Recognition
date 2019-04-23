@@ -57,6 +57,6 @@ if __name__=='__main__':
     
     for i in range(500):
         for j in range(channels):
-            models[j].fit(data_train[:,:,j],data_train[:,:,j], epochs=20,batch_size=256)
+            models[j].fit(data_train[:,:,j:j+1],data_train[:,:,j:j+1], epochs=20,batch_size=256)
             saveStr='lstmModel_channel_'+str(j)+'.h5'
-            model.save(saveStr)
+            models[j].save(saveStr)
