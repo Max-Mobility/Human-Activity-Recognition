@@ -4,7 +4,6 @@ Created on Wed May  1 11:15:13 2019
 
 @author: Guo
 """
-
 import json
 import numpy as np
 from matplotlib.pyplot import plot
@@ -73,6 +72,23 @@ class sensorData:
                         self.grav_z.append(z)
                         self.grav_time.append(time)
         print(len(self.gyro_x),len(self.lin_x),len(self.grav_x))
+        sortIndex = np.argsort(self.gyro_time)
+        self.gyro_time=[self.gyro_time[i] for i in sortIndex]
+        self.gyro_x=[self.gyro_x[i] for i in sortIndex]
+        self.gyro_y=[self.gyro_y[i] for i in sortIndex]
+        self.gyro_z=[self.gyro_z[i] for i in sortIndex]
+        
+        sortIndex = np.argsort(self.lin_time)
+        self.lin_time = [self.lin_time[i] for i in sortIndex]
+        self.lin_x = [self.lin_x[i] for i in sortIndex]
+        self.lin_y = [self.lin_y[i] for i in sortIndex]
+        self.lin_z = [self.lin_z[i] for i in sortIndex]
+        
+        sortIndex = np.argsort(self.grav_time)
+        self.grav_time = [self.grav_time[i] for i in sortIndex]
+        self.grav_x = [self.grav_x[i] for i in sortIndex]
+        self.grav_y = [self.grav_y[i] for i in sortIndex]
+        self.grav_z = [self.grav_z[i] for i in sortIndex]
     def get_validData(self):
         for i in range(len(self.lin_time)):
             time = self.lin_time[i]
