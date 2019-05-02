@@ -89,6 +89,24 @@ class sensorData:
         self.grav_x = [self.grav_x[i] for i in sortIndex]
         self.grav_y = [self.grav_y[i] for i in sortIndex]
         self.grav_z = [self.grav_z[i] for i in sortIndex]
+        
+        self.gyro_time,self.gyro_x,self.gyro_y,self.gyro_z=self.remove_duplicateData(self.gyro_time,self.gyro_x,self.gyro_y,self.gyro_z)
+        self.lin_time,self.lin_x,self.lin_y,self.lin_z=self.remove_duplicateData(self.lin_time,self.lin_x,self.lin_y,self.lin_z)
+        self.grav_time,self.grav_x,self.grav_y,self.grav_z=self.remove_duplicateData(self.grav_time,self.grav_x,self.grav_y,self.grav_z)
+        
+    def remove_duplicateData(self,time,x,y,z):
+        index=[]
+        for i in range(1,len(time)-1):
+            if time[i]==time[i+1]:
+                index.append(i+1)
+        index.reverse()
+        for i in range(len(index)):
+            time.pop(index[i])
+            x.pop(index[i])
+            y.pop(index[i])
+            z.pop(index[i])
+        return time,x,y,z
+        
     def get_validData(self):
         for i in range(len(self.lin_time)):
             time = self.lin_time[i]
