@@ -16,6 +16,12 @@ def main():
     ap.add_argument("-u", "--uuid", type=str,
                     default="bf7ff952e4163201",
                     help="Device UUID to focus on.")
+    ap.add_argument("-s", "--start-index", type=int,
+                    default=0,
+                    help="Start index into array for plotting.")
+    ap.add_argument("-e", "--end-index", type=int,
+                    default=0,
+                    help="End index into array for plotting.")
     args = vars(ap.parse_args())
 
     fileName = args['input']
@@ -35,7 +41,7 @@ def main():
         if 'sensor_data' in data[i].keys():
             if len(data[i]['sensor_data'])>0 and data[i]['device_uuid']==deviceUUID:
                 d_data.append(data[i]['sensor_data'])
-                print(len(d_data[-1]),len(d_data)-1,time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[i]['sensor_data'][1]['t']/1000)))
+                #print(len(d_data[-1]),len(d_data)-1,time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[i]['sensor_data'][1]['t']/1000)))
 
     print("Number of records for ",deviceUUID,": ",len(d_data))
 
@@ -47,6 +53,7 @@ def main():
             for sensorData in dd_data:
                 if sensorData['s'] not in sensors:
                     sensors.append(sensorData['s'])
+            '''
             if len(dd_data)>0:
                 print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(dd_data[0]['t']/1000)))
                 print(data[i]["device_uuid"]+"  "+data[i]['device_model'] +"  "+data[i]['user_identifier'])
@@ -54,6 +61,7 @@ def main():
                 print("sensors:"+str(sensors))
             else:
                 print('0 data')
+            '''
 
     gravity_time=[]
     gravity_timestamp=[]
@@ -81,7 +89,13 @@ def main():
     RV_counter=0
     HR_counter=0
     GY_counter=0
-    for dd_data in d_data[17:22]:
+    startIndex = 0
+    endIndex = len(d_data)
+    if args['start_index']:
+        startIndex = args['start_index']
+    if args['end_index']:
+        endIndex = args['end_index']
+    for dd_data in d_data[startIndex:endIndex]:
 
         for sensorData in dd_data:
             if sensorData['s'] == 9:
@@ -105,6 +119,10 @@ def main():
                 RV_timestamp.append(sensorData['t']/1000)
     print("Num Sensor Data: ",GR_counter,LA_counter,GY_counter,RV_counter)
 
+    start_time = d_data[startIndex][1]['t']/1000
+    end_time = d_data[endIndex-1][1]['t']/1000
+    print("Start time: ", time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(start_time)))
+    print("End time:   ", time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(end_time)))
     gravity_time_int=[]
     lineAcc_time_int=[]
     gyro_time_int=[]
@@ -136,6 +154,7 @@ def main():
         RV_time_int.append((RV_time[i+1]-RV_time[i]))#/1000000000)
         RV_timestamp_int.append((RV_timestamp[i+1]-RV_timestamp[i])/1000000000)
 
+    '''
     print("gravity time "+str(sum(gravity_time_int)))
     print("gravity timestamp "+str(sum(gravity_timestamp_int)))
     print("lineAcc time "+str(sum(lineAcc_time_int)))
@@ -144,6 +163,7 @@ def main():
     print("gyro timestamp "+str(sum(gyro_timestamp_int)))
     print("RV time "+str(sum(RV_time_int)))
     print("RV timestamp "+str(sum(RV_timestamp_int)))
+    '''
 
     fig=plt.figure(figsize=(10,5))
     plt.subplot(1,2,1)
