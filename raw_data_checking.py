@@ -14,7 +14,6 @@ def main():
                     default="./PSDS.json",
                     help="Path to json data file.")
     ap.add_argument("-u", "--uuid", type=str,
-                    default="bf7ff952e4163201",
                     help="Device UUID to focus on.")
     ap.add_argument("-s", "--start-index", type=int,
                     default=0,
@@ -25,7 +24,6 @@ def main():
     args = vars(ap.parse_args())
 
     fileName = args['input']
-    deviceUUID = args['uuid']
 
     data = []
     with open(fileName) as f:
@@ -36,6 +34,26 @@ def main():
     if len(data) == 0:
         exit()
 
+    # determine devices and users in the dataset
+    uuids=[]
+    userIds=[]
+    for i in range(len(data)):
+        if 'device_uuid' in data[i].keys():
+            uuid = data[i]['device_uuid']
+            if uuid not in uuids:
+                uuids.append(uuid)
+        if 'user_identifier' in data[i].keys():
+            userId = data[i]['user_identifier']
+            if userId not in userIds:
+                userIds.append(userId)
+
+    print("User identifiers: ", userIds)
+    print("Device UUIDs: ", uuids)
+
+    # now get the selected data
+    deviceUUID = uuids[0]
+    if args['uuid']:
+        deviceUUID = args['uuid']
     d_data=[]
     for i in range(len(data)):
         if 'sensor_data' in data[i].keys():
