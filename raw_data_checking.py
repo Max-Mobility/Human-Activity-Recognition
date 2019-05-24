@@ -4,6 +4,8 @@ import argparse
 import json
 from matplotlib.pyplot import plot
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdate
+import pytz
 import time
 import numpy as np
 
@@ -194,10 +196,20 @@ def main():
     plt.show()
     '''
 
-    plot([x - gravity_time[0]for x in gravity_time], gravity_x)
-    plt.show()
+    grav_time = mdate.epoch2num(gravity_time)#[x - gravity_time[0]for x in gravity_time])
+    gyro_time = mdate.epoch2num(gyro_time)#[x - gyro_time[0]for x in gyro_time])
+    fig, ax = plt.subplots()
+    ax.plot_date(grav_time, gravity_x, 'y')
+    ax.plot_date(gyro_time, gyro_x, 'r')
+    # Choose your xtick format string
+    date_fmt = '%d-%m-%y %H:%M:%S'
 
-    plot([x - gyro_time[0]for x in gyro_time], gyro_x)
+    # Use a DateFormatter to set the data to the correct format.
+    date_formatter = mdate.DateFormatter(date_fmt, pytz.timezone('US/Central'))
+    ax.xaxis.set_major_formatter(date_formatter)
+
+    # Sets the tick labels diagonal so they fit easier.
+    fig.autofmt_xdate()
     plt.show()
 
 if __name__ == "__main__":
