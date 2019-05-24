@@ -82,22 +82,18 @@ def main():
             '''
 
     gravity_time=[]
-    gravity_timestamp=[]
     gravity_x=[]
     gravity_y=[]
     gravity_z=[]
     lineAcc_time=[]
-    lineAcc_timestamp=[]
     lineAcc_x=[]
     lineAcc_y=[]
     lineAcc_z=[]
     gyro_time=[]
-    gyro_timestamp=[]
     gyro_x=[]
     gyro_y=[]
     gyro_z=[]
     RV_time=[]
-    RV_timestamp=[]
     RV_x=[]
     RV_y=[]
     RV_z=[]
@@ -118,23 +114,25 @@ def main():
         for sensorData in dd_data:
             if sensorData['s'] == 9:
                 GR_counter+=1
-                gravity_time.append(sensorData['t'])
-                gravity_timestamp.append(sensorData['t']/1000)
+                gravity_time.append(sensorData['t'] / 1000)
                 gravity_x.append(sensorData['d'][0])
                 gravity_y.append(sensorData['d'][1])
                 gravity_z.append(sensorData['d'][2])
             if sensorData['s'] == 10:
                 LA_counter+=1
-                lineAcc_time.append(sensorData['t'])
-                lineAcc_timestamp.append(sensorData['t']/1000)
+                lineAcc_time.append(sensorData['t'] / 1000)
+                lineAcc_x.append(sensorData['d'][0])
+                lineAcc_y.append(sensorData['d'][1])
+                lineAcc_z.append(sensorData['d'][2])
             if sensorData['s'] == 4:
                 GY_counter +=1
-                gyro_time.append(sensorData['t'])
-                gyro_timestamp.append(sensorData['t']/1000)
+                gyro_time.append(sensorData['t'] / 1000)
+                gyro_x.append(sensorData['d'][0])
+                gyro_y.append(sensorData['d'][1])
+                gyro_z.append(sensorData['d'][2])
             if sensorData['s'] == 15:
                 RV_counter +=1
-                RV_time.append(sensorData['t'])
-                RV_timestamp.append(sensorData['t']/1000)
+                RV_time.append(sensorData['t'] / 1000)
     print("Num Sensor Data: ",GR_counter,LA_counter,GY_counter,RV_counter)
 
     start_time = d_data[startIndex][1]['t']/1000
@@ -145,32 +143,23 @@ def main():
     lineAcc_time_int=[]
     gyro_time_int=[]
     RV_time_int=[]
-    gravity_timestamp_int=[]
-    lineAcc_timestamp_int=[]
-    gyro_timestamp_int=[]
-    RV_timestamp_int=[]
+
     '''
     gravity_time = np.sort(gravity_time)
-    gravity_timestamp = np.sort(gravity_timestamp)
     lineAcc_time = np.sort(lineAcc_time)
-    lineAcc_timestamp = np.sort(lineAcc_timestamp)
     gyro_time = np.sort(gyro_time)
-    gyro_timestamp = np.sort(gyro_timestamp)
     RV_time = np.sort(RV_time)
-    RV_timestamp = np.sort(RV_timestamp)
+    '''
+    '''
     '''
     for i in range (1,GR_counter):
-        gravity_time_int.append((gravity_time[i]-gravity_time[i-1]))#/1000000000)
-        gravity_timestamp_int.append((gravity_timestamp[i]-gravity_timestamp[i-1])/1000000000)
+        gravity_time_int.append((gravity_time[i]-gravity_time[i-1]))
     for i in range (LA_counter-1):
-        lineAcc_time_int.append((lineAcc_time[i+1]-lineAcc_time[i]))#/1000000000)
-        lineAcc_timestamp_int.append((lineAcc_timestamp[i+1]-lineAcc_timestamp[i])/1000000000)
+        lineAcc_time_int.append((lineAcc_time[i+1]-lineAcc_time[i]))
     for i in range (GY_counter-1):
-        gyro_time_int.append((gyro_time[i+1]-gyro_time[i]))#/1000000000)
-        gyro_timestamp_int.append((gyro_timestamp[i+1]-gyro_timestamp[i])/1000000000)
+        gyro_time_int.append((gyro_time[i+1]-gyro_time[i]))
     for i in range (RV_counter-1):
-        RV_time_int.append((RV_time[i+1]-RV_time[i]))#/1000000000)
-        RV_timestamp_int.append((RV_timestamp[i+1]-RV_timestamp[i])/1000000000)
+        RV_time_int.append((RV_time[i+1]-RV_time[i]))
 
     '''
     print("gravity time "+str(sum(gravity_time_int)))
@@ -192,6 +181,7 @@ def main():
     plot(gyro_time_int,'k')
     plt.show()
 
+    '''
     fig=plt.figure(figsize=(10,5))
     start_index=0#71000
     end_index = -1#GY_counter#150000
@@ -202,14 +192,12 @@ def main():
     plot(lineAcc_timestamp_int[start_index:end_index],'b')
     plot(gyro_timestamp_int[start_index:end_index],'k')
     plt.show()
+    '''
 
-    plot([x - gravity_time[0]for x in gravity_time])#,gravity_x)
+    plot([x - gravity_time[0]for x in gravity_time], gravity_x)
     plt.show()
 
-    plot((gyro_timestamp))
-    plt.show()
-
-    plot((gravity_timestamp))
+    plot([x - gyro_time[0]for x in gyro_time], gyro_x)
     plt.show()
 
 if __name__ == "__main__":
