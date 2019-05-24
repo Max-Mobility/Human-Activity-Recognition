@@ -135,23 +135,32 @@ def main():
             if sensorData['s'] == 15:
                 RV_counter +=1
                 RV_time.append(sensorData['t'] / 1000)
-    print("Num Sensor Data: ",GR_counter,LA_counter,GY_counter,RV_counter)
 
     start_time = d_data[startIndex][1]['t']/1000
     end_time = d_data[endIndex-1][1]['t']/1000
+    duration = end_time - start_time
+
+    print("Num Sensor Data: ",GR_counter,LA_counter,GY_counter,RV_counter)
+    gr_avg, la_avg, gy_avg, rv_avg = [
+        duration / GR_counter,
+        duration / LA_counter,
+        duration / GY_counter,
+        duration / RV_counter
+    ]
+    print("Average sensor interval: {:.4f},{:.4f},{:.4f},{:.4f}".format(gr_avg,la_avg,gy_avg,rv_avg))
+
     print("Start time: ", time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(start_time)))
     print("End time:   ", time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(end_time)))
+    print("Duration:   {:.2f} seconds".format(duration))
     gravity_time_int=[]
     lineAcc_time_int=[]
     gyro_time_int=[]
     RV_time_int=[]
 
-    '''
     gravity_time = np.sort(gravity_time)
     lineAcc_time = np.sort(lineAcc_time)
     gyro_time = np.sort(gyro_time)
     RV_time = np.sort(RV_time)
-    '''
     '''
     '''
     for i in range (1,GR_counter):
