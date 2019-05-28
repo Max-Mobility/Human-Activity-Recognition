@@ -111,8 +111,9 @@ def main():
         startIndex = args['start_index']
     if args['end_index']:
         endIndex = args['end_index']
+    lengths = []
     for dd_data in d_data[startIndex:endIndex]:
-
+        lengths.append(len(dd_data))
         for sensorData in dd_data:
             if sensorData['s'] == 9:
                 GR_counter+=1
@@ -152,8 +153,10 @@ def main():
         duration / GY_counter,
         duration / RV_counter
     ]
+    lenAvg = np.mean(np.array(lengths))
+    lenStdDev = np.std(np.array(lengths))
     print("Average sensor interval: {:.4f},{:.4f},{:.4f},{:.4f}".format(gr_avg,la_avg,gy_avg,rv_avg))
-
+    print("Record length (avg, stddev): {:.4f}, {:.4f}".format(lenAvg, lenStdDev))
     print("Start time: ", time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(start_time)))
     print("End time:   ", time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime(end_time)))
     print("Duration:   {:.2f} seconds".format(duration))
