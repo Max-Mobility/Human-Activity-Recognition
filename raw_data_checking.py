@@ -136,9 +136,14 @@ def main():
                 RV_counter +=1
                 RV_time.append(sensorData['t'] / 1000)
 
-    start_time = d_data[startIndex][1]['t']/1000
-    end_time = d_data[endIndex-1][1]['t']/1000
-    duration = end_time - start_time
+    if len(d_data[startIndex]) > 1:
+        start_time = d_data[startIndex][1]['t']/1000
+        end_time = d_data[endIndex-1][1]['t']/1000
+        duration = end_time - start_time
+    else:
+        start_time = d_data[startIndex+1][1]['t']/1000
+        end_time = d_data[endIndex-1][1]['t']/1000
+        duration = end_time - start_time
 
     print("Num Sensor Data: ",GR_counter,LA_counter,GY_counter,RV_counter)
     gr_avg, la_avg, gy_avg, rv_avg = [
