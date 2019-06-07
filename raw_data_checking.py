@@ -57,13 +57,26 @@ def main():
     if args['uuid']:
         deviceUUID = args['uuid']
     d_data=[]
+    d_location=[]
     for i in range(len(data)):
         if 'sensor_data' in data[i].keys():
             if len(data[i]['sensor_data'])>0 and data[i]['device_uuid']==deviceUUID:
                 d_data.append(data[i]['sensor_data'])
                 #print(len(d_data[-1]),len(d_data)-1,time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[i]['sensor_data'][1]['t']/1000)))
+        if 'location' in data[i].keys():
+            d_location.append(data[i]['location']);
 
     print("Number of records for ",deviceUUID,": ",len(d_data))
+    print("Number of locations for ",deviceUUID,": ",len(d_location))
+
+    # plot the locations
+    long = [x['longitude'] for x in d_location]
+    lat = [x['latitude'] for x in d_location]
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.scatter(long, lat)
+    plt.xlabel('Longitude')
+    plt.ylabel('Latitude')
+    plt.show()
 
     for i in range(len(data)):
         sensors=[]
