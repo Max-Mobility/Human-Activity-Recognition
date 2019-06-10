@@ -63,7 +63,7 @@ def main():
             if len(data[i]['sensor_data'])>0 and data[i]['device_uuid']==deviceUUID:
                 d_data.append(data[i]['sensor_data'])
                 #print(len(d_data[-1]),len(d_data)-1,time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(data[i]['sensor_data'][1]['t']/1000)))
-        if 'location' in data[i].keys():
+        if 'location' in data[i].keys() and data[i]['device_uuid']==deviceUUID:
             d_location.append(data[i]['location']);
 
     print("Number of records for ",deviceUUID,": ",len(d_data))
