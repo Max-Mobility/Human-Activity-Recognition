@@ -103,3 +103,15 @@ venv.bak/
 # mypy
 .mypy_cache/
 *.npy
+*.pb
+*.h5
+*.csv
+*.annotation
+*.annotation~
+*.hdf5
+*.tflite
+tmp/
+*.npz
+*.nova
+*.cvs
+*.zip
