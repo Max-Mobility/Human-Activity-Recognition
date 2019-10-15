@@ -14,6 +14,8 @@ from keras import optimizers
 #import matplotlib.pyplot as plt
 import numpy as np
 from keras import backend as K
+import vae as VAE
+import os
 
 def sampling(args):
     z_mean, z_log_var = args
@@ -21,7 +23,7 @@ def sampling(args):
     dim = K.int_shape(z_mean)[1]
     epsilon = K.random_normal(shape=(batch, dim))
     return z_mean + K.exp(0.5 * z_log_var) * epsilon
-
+'''
 def vae(input_shape,latent_dim):
     # VAE model
 
@@ -82,26 +84,35 @@ def vae(input_shape,latent_dim):
     vae.metrics_names.append("kl_loss")
     
     return vae,encoder,decoder
-
+'''
 
 if __name__ =='__main__':
-    
+    os.environ["CUDA_VISIBLE_DEVICES"]="5"
     data=np.load('./watch_norm_32_4_29.npy')
+    x_train=data[:20736,:,:]
     input_shape=(data.shape[1],data.shape[2])
     intermediate_dim = 1024
     latent_dim = 256 
-    alpha = K.variable(0.)
+    alpha = K.variable(0.0001)
     
-    model,encoder,decoder=vae(input_shape, latent_dim)
+    model,encoder,decoder=VAE.vae(input_shape, latent_dim,intermediate_dim,alpha)
     
-    model.load_weights('./models/25hz/vae_epoch_7000rc_0.02_KL_99.82_weights.h5')
+    model.load_weights('./models/25hz/vae_epoch_9000rc_0.00_KL_22702.58_weights.h5')
+    
+    encoder=Model(inputs=model.input,outputs=model.get_layer(index=1).outputs[2])
+    
+    full_LV= encoder.predict(data)
+    np.save('VAE_LV.npy',full_LV)
+    
+    loss =model.evaluate(x_train)
+    print(loss)
     
     n=1000
-    xhat=data[n:n+1,:,:]
+    xhat=x_train[n:n+100,:,:]
     yhat=model.predict(xhat)
     
-    xhat=xhat.reshape([32,18])
-    yhat=yhat.reshape([32,18])
+    #xhat=xhat.reshape([32,18])
+    #yhat=yhat.reshape([32,18])
     
     np.save('./7000rc_0.02_KL_99.82_yhat.npy', yhat)
     np.save('./7000rc_0.02_KL_99.82_xhat.npy', xhat)

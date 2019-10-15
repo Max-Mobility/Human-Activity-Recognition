@@ -8,6 +8,7 @@ import json
 import numpy as np
 from matplotlib.pyplot import plot
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 def interp(xp,fp):
     x=np.zeros(shape=(int(xp[-1]/20)+1,13), dtype=float)
@@ -17,7 +18,7 @@ def interp(xp,fp):
     return new_time,x
 
 class sensorData:
-    def __init__(self,data,uuid,window=32,channel=9,frq=25):
+    def __init__(self,data,uuid,window=20,channel=9,frq=25):
         self.uuid=uuid
         self.frq  =frq
         self.window=window
@@ -35,7 +36,8 @@ class sensorData:
         self.grav_y=[]
         self.grav_z=[]
         self.grav_time=[]
-        self.valid=np.empty((0,9))
+        self.valid=np.empty((0,channel))
+        self.validRaw=np.empty((0,channel))
         self.validTime=[]
         self.fullData=np.empty((0,self.window,self.channel))
         self.fullData_norm=np.empty((0,self.window,self.channel*2))
@@ -52,10 +54,9 @@ class sensorData:
                     
                     sensor = sdata[j]['s']
                     if sensor==4 or sensor ==10 or sensor ==9:
-                        x=sdata[j]['d']['x']
-                        y=sdata[j]['d']['y']
-                        z=sdata[j]['d']['z']
-                        time=np.rint(sdata[j]['ts']/1000000)
+                        x,y,z=sdata[j]['d']
+                        
+                        time=np.rint(sdata[j]['t']/(1000/self.frq/2))
                     if sensor==4:
                         self.gyro_x.append(x)
                         self.gyro_y.append(y)
@@ -93,6 +94,7 @@ class sensorData:
         self.gyro_time,self.gyro_x,self.gyro_y,self.gyro_z=self.remove_duplicateData(self.gyro_time,self.gyro_x,self.gyro_y,self.gyro_z)
         self.lin_time,self.lin_x,self.lin_y,self.lin_z=self.remove_duplicateData(self.lin_time,self.lin_x,self.lin_y,self.lin_z)
         self.grav_time,self.grav_x,self.grav_y,self.grav_z=self.remove_duplicateData(self.grav_time,self.grav_x,self.grav_y,self.grav_z)
+        print(len(self.gyro_time),len(self.lin_time),len(self.grav_time))
         
     def remove_duplicateData(self,time,x,y,z):
         index=[]
@@ -108,14 +110,13 @@ class sensorData:
         return time,x,y,z
         
     def get_validData(self):
-        for i in range(len(self.lin_time)):
+        print('get_validData')
+        for i in tqdm(range(len(self.lin_time))):
             time = self.lin_time[i]
-            if (time in self.gyro_time) & (time in self.grav_time):
-                gyroIndex=self.gyro_time.index(time)
+            if (time in self.grav_time):
+                #gyroIndex=self.gyro_time.index(time)
                 gravIndex=self.grav_time.index(time)
-                data=[[self.gyro_x[gyroIndex],
-                      self.gyro_y[gyroIndex],
-                      self.gyro_z[gyroIndex],
+                data=[[0,0,0,
                       self.lin_x[i],
                       self.lin_y[i],
                       self.lin_z[i],
@@ -130,21 +131,24 @@ class sensorData:
         window=self.window
         channel=self.channel
         length=len(self.validTime)
+        print(window,channel,length)
         X=np.empty(shape=(length-window+1, window, channel))
         counter = 0
         unvalid_counter=0
-        for i in range(0,length-window+1):
-            if (self.validTime[i+window-1]-self.validTime[i]<window*1000/self.frq*1.1):
+        print('get FullData')
+        for i in tqdm(range(0,length-window+1)):
+            if (self.validTime[i+window-1]-self.validTime[i]<window*1000/self.frq*1.3):
                 X[counter,:,:channel] = self.valid[i:i+window,:]
                 counter +=1
+                self.validRaw=np.append(self.validRaw,self.valid[i:i+1,:],axis=0)
             else:
                 #print(self.validTime[i+window-1]-self.validTime[i])
                 unvalid_counter+=1
-        #print(unvalid_counter)
+        print('unvalid:'+str(unvalid_counter))
         self.fullData=np.append(self.fullData,X[:counter,:,:],axis=0)
         self.fullData=self.scale(self.fullData)
         fullDataFFT = np.zeros(self.fullData.shape)
-        for j in range(0,self.fullData.shape[0]):
+        for j in tqdm(range(0,self.fullData.shape[0])):
             for k in range(0,self.channel):
                 fft=np.fft.fft(self.fullData[j,:,k])
                 fullDataFFT[j,:,k]=abs(fft)
@@ -171,21 +175,37 @@ class sensorData:
 
 
 class sensorDatas:
-    def __init__(self,data_url,window=32,channel=9):
+    def __init__(self,data_url,window=20,channel=9,uuid=None,userID=None):
         with open(data_url) as w:
             self.data = json.load(w)
+        if uuid!=None:
+            self.uuids=[]
+            self.uuids.append(uuid)
+        else:
+            self.uuids=self.get_uuid(self.data)
         
-        self.uuids=self.get_uuid(self.data)
+        if userID!=None:
+            self.userID=[]
+            self.userID.append(userID)
+        else:
+            self.userID=self.get_userID(self.data)
+        print(self.uuids,self.userID)
         self.sensorDatas=[]
         self.data_len=0
         self.fullDatas=np.empty((0,window,channel*2))
+        self.valid=np.empty((0,channel))
         fileName = data_url.split('.json')[0]
         for i in range(len(self.uuids)):
+            s='working on uuid:'+str(self.uuids[i])
+            print(s)
             self.sensorDatas.append(sensorData(data=self.data,uuid=self.uuids[i]))
-            self.fullDatas=np.append(self.fullDatas,self.sensorDatas[i].fullData_norm,axis=0)
+            self.fullDatas=np.append(self.fullDatas,self.sensorDatas[i].fullData_norm,axis=0)      # all data for training
             self.sensorDatas[i].save(fileName)
+            self.valid=np.append(self.valid,self.sensorDatas[i].validRaw,axis=0)
         
         np.save(fileName+'.npy',self.fullDatas)
+        np.savetxt(fileName+'_raw.csv',self.valid,delimiter=",")
+        
             
         
     def get_uuid(self,data):
@@ -194,9 +214,14 @@ class sensorDatas:
             if data[i]['device_uuid'] not in uuid:
                 uuid.append(data[i]['device_uuid'])
         return uuid
-
+    def get_userID(self,data):
+        userID=[]
+        for i in range(len(data)):
+            if data[i]['user_identifier'] not in userID:
+                userID.append(data[i]['user_identifier'])
+        return userID
 
 if __name__ =='__main__':
-    data_url=r'C:\Users\Guo\Downloads\WatchData (28).json'
-    datas=sensorDatas(data_url)
+    data_url=r'C:\Users\Guo\Downloads\PSDSData (31).json'
+    datas=sensorDatas(data_url)#,uuid='3b9d2af8cebfb9d8')
     

@@ -13,7 +13,7 @@ from keras.losses import mse
 from keras import optimizers
 from keras import backend as K
 import keras.callbacks as kc
-
+import os
 import numpy as np
 
 """Reparameterization trick by sampling from an isotropic unit Gaussian.
@@ -34,24 +34,30 @@ class NewCallback(kc.Callback):
         self.alpha=alpha
 
     def on_epoch_begin(self, epoch, logs={}):
-        K.set_value(self.alpha, 1/(1+np.exp((2500-epoch)/200)))
+        #K.set_value(self.alpha, 1/(1+np.exp((3000-epoch)/200)))
+        #K.set_value(self.alpha, 1)#/(1+np.exp((3000-epoch)/200)))
+        a=K.get_value(self.alpha)
+        if (epoch%1000==0):
+            K.set_value(self.alpha, a/2)
+        else:
+            K.set_value(self.alpha, a)
         print(K.get_value(self.alpha))
 
 
-def vae(input_shape,latent_dim):
+def vae(input_shape,latent_dim,intermediate_dim,alpha):
     # VAE model
 
     inputs= Input(shape=input_shape, name='encoder_input')
-    x1=Conv1D(128,3,padding='same',activation='tanh')(inputs)
+    x1=Conv1D(128,3,padding='same',activation='relu')(inputs)
     x1=MaxPooling1D(pool_size=2, strides=2, padding='valid')(x1)
-    x2=Conv1D(256,3,padding='same',activation='tanh',strides=1)(x1)
+    x2=Conv1D(256,3,padding='same',activation='relu',strides=1)(x1)
     x2=MaxPooling1D(pool_size=2, strides=2, padding='valid')(x2)
-    x2=Conv1D(384,3,padding='same',activation='tanh',strides=1)(x2)
+    x2=Conv1D(384,3,padding='same',activation='relu',strides=1)(x2)
     x2=Flatten()(x2)
-    x=Dense(intermediate_dim, activation='tanh')(x2)
+    x=Dense(intermediate_dim, activation='relu')(x2)
     
     z_mean = Dense(latent_dim, name='z_mean')(x)
-    z_log_var = Dense(latent_dim, name='z_log_var',activation='relu')(x)
+    z_log_var = Dense(latent_dim, name='z_log_var',activation='softplus')(x)
     
     # Sampling layer
     z=Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
@@ -64,14 +70,14 @@ def vae(input_shape,latent_dim):
     latent_inputs = Input(shape=(latent_dim,), name='z_sampling')
     x = Dense(3072, activation='relu')(latent_inputs)#
     x = Reshape((8,384))(x)
-    x3= Conv1D(384,3,padding='same',activation='tanh', strides=1)(x)
+    x3= Conv1D(384,3,padding='same',activation='relu', strides=1)(x)
     x3= UpSampling1D(2)(x3)
-    x4= Conv1D(256,3,padding='same',activation='tanh', strides=1)(x3)
+    x4= Conv1D(256,3,padding='same',activation='relu', strides=1)(x3)
     x4= UpSampling1D(2)(x4)
-    x4= Conv1D(128,3,padding='same',activation='tanh',strides=1)(x4)
+    x4= Conv1D(128,3,padding='same',activation='relu',strides=1)(x4)
     
     
-    outputs= Conv1D(18,3,padding='same', activation='tanh')(x4)
+    outputs= Conv1D(18,3,padding='same', activation='linear')(x4)
     #outputs = Dense(original_dim, activation='tanh')(x4)
     
     decoder = Model(latent_inputs, outputs, name='decoder')
@@ -80,15 +86,21 @@ def vae(input_shape,latent_dim):
     
     outputs=decoder(encoder(inputs)[2])
     vae= Model(inputs, outputs, name='vae')
-    
+    '''
     reconstruction_loss = K.mean(mse(K.batch_flatten(inputs), K.batch_flatten(outputs)), 
                                 axis=-1)
     kl_loss = 1+z_log_var-K.square(z_mean)- K.exp(z_log_var)
     kl_loss = K.mean(kl_loss, axis=-1)
     kl_loss *= -0.5
+    '''
     
+    reconstruction_loss = K.mean(mse(K.flatten(inputs), K.flatten(outputs))) 
+                                #axis=-1)
+    kl_loss = 1+z_log_var-K.square(z_mean)- K.exp(z_log_var)
+    kl_loss = K.mean(K.sum(kl_loss, axis=-1))
+    kl_loss *= -0.5
     
-    vae_loss = K.mean(reconstruction_loss + alpha*kl_loss)
+    vae_loss = (reconstruction_loss + alpha*kl_loss)
     vae.add_loss(vae_loss)
     opt=optimizers.adam(lr=1e-4)
     vae.compile(optimizer=opt)
@@ -100,20 +112,33 @@ def vae(input_shape,latent_dim):
     return vae,encoder,decoder
         
 if __name__ =='__main__':
-    data=np.load('./watch_norm_128_4_29_.npy')
-    x_train=data[:20928,:,:]
+    os.environ["CUDA_VISIBLE_DEVICES"]="4"
+    data=np.load('./watch_norm_32_4_29.npy')
+    x_train=data[:20736,:,:]
+    print(x_train.shape)
     
     original_dim=data.shape[1] * data.shape[2]
     input_shape=(data.shape[1],data.shape[2])
     intermediate_dim = 1024
-    batch_size = 32
-    latent_dim = 128
+    batch_size = 256
+    latent_dim = 256
     epochs=10000
     
-    alpha = K.variable(0.)
+    alpha = K.variable(0.00001)
     
-    vae,encoder,decoder=vae(input_shape, latent_dim)
-      
-    his=vae.fit(x_train, epochs=epochs, batch_size=batch_size,callbacks=[NewCallback(alpha),])
-    vae.save_weights('vae_mlp_weights.h5')
+    vae,encoder,decoder=vae(input_shape, latent_dim,intermediate_dim,alpha)
+    
+    vae.load_weights('./models/25hz/vae_epoch_10000rc_0.02_KL_367.35_weights.h5')
+    train_round =10
+    epochs_per_round=1000
+    
+    for i in range(train_round):
+        print('start training round '+str(i))
+        print('training lstm_auto model')
+        his=vae.fit(x_train, epochs=(i+1)*epochs_per_round+10000,
+                    initial_epoch=i*epochs_per_round+10000,
+                    batch_size=batch_size,callbacks=[NewCallback(alpha),])
+        saveStr = 'epoch_'+str((i+1)*epochs_per_round)+'rc_'+'{:.2f}'.format(his.history['rc_loss'][-1])+'_KL_'+'{:.2f}'.format(his.history['kl_loss'][-1])
+        vae.save_weights('./models/25hz/vae_'+saveStr+'_weights.h5')
+        vae.save('./models/25hz/vae_'+saveStr+'.h5')
     

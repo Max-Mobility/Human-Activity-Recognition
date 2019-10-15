@@ -21,7 +21,8 @@ from mpl_toolkits.mplot3d import axes3d
 
 if __name__ == '__main__':
     data= np.load('watch_norm_32_4_29.npy')
-    useLSTM = False
+    #useLSTM = False
+    useLSTM = True
     #data= np.load('./WatchData (28).npy')
     timeStep=1
     indexs = np.arange(0,len(data),timeStep)
@@ -36,6 +37,8 @@ if __name__ == '__main__':
     
     LV=Mymodel.predict(data)
     full_LV = np.append(LV[0],LV[1],axis=1)
+    np.save('full_LV_LSTM_128Unit.npy',full_LV)
+    
     n_clusters=3
     
     #index = np.append(index,np.arange(96*4,96*6))
@@ -61,7 +64,8 @@ if __name__ == '__main__':
     fig = plt.figure(figsize=(20,20))
     ax = fig.add_subplot(221, projection='3d')
     ax.scatter(pcaComponents[:,0],pcaComponents[:,1],pcaComponents[:,2],c=y_kmeans)
-    plt.show
+    plt.show()
+    '''
     #ax.view_init(45, -45)
     y_kmeans=np.append(np.zeros((32,1)),y_kmeans)
     #saveStr='./kmeans_4_29_cluster_128Units_'+str(n_clusters)+'.csv'
@@ -86,3 +90,4 @@ if __name__ == '__main__':
     y_kmean_raw=np.append(np.zeros((32,1)),y_kmean_raw)
     saveStr='./kmeans_4_29_raw_cluster_'+str(n_clusters)+'.csv'
     np.savetxt(saveStr,y_kmean_raw)
+    '''

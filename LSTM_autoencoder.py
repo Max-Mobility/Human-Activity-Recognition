@@ -45,8 +45,15 @@ if __name__=='__main__':
     
     model = Model(inputs=inputs, outputs=x4)
     
-    opt=keras.optimizers.Adam(lr=0.0000001)
+    opt=keras.optimizers.Adam(lr=0.0001)
     model.compile(optimizer=opt, loss='mse',metrics=['accuracy'])
-    for i in range(500):
-        model.fit(data_train[:,:,:],data_train[:,:,:], epochs=20,batch_size=256)
+    train_round =10
+    epochs_per_round=20
+    for i in range(train_round):
+        print('start training round '+str(i))
+        print('training full LSTM model')
+        model.fit(data_train,data_train,
+                  batch_size=256,
+                  epochs=(i+1)*epochs_per_round,
+                  validation_split=0.1,verbose=1,initial_epoch=i*epochs_per_round)
         model.save('lstmModel.h5')
