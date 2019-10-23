@@ -18,7 +18,7 @@ def interp(xp,fp):
     return new_time,x
 
 class sensorData:
-    def __init__(self,data,uuid,window=20,channel=9,frq=25):
+    def __init__(self,data,uuid,window=20,channel=13,frq=25):
         self.uuid=uuid
         self.frq  =frq
         self.window=window
@@ -36,6 +36,11 @@ class sensorData:
         self.grav_y=[]
         self.grav_z=[]
         self.grav_time=[]
+        self.rv_x=[]
+        self.rv_y=[]
+        self.rv_z=[]
+        self.rv_t=[]
+        self.rv_time=[]
         self.valid=np.empty((0,channel))
         self.validRaw=np.empty((0,channel))
         self.validTime=[]
@@ -44,7 +49,7 @@ class sensorData:
         
         self.get_rawData(data)
         self.get_validData()
-        self.get_fullData()
+        #self.get_fullData()
         self.data_len=self.fullData_norm.shape[0]
     def get_rawData(self,data):
         for i in range(len(data)):
@@ -53,10 +58,10 @@ class sensorData:
                 for j in range(len(sdata)):
                     
                     sensor = sdata[j]['s']
-                    if sensor==4 or sensor ==10 or sensor ==9:
+                    if sensor==4 or sensor ==10 or sensor ==9 :
                         x,y,z=sdata[j]['d']
-                        
                         time=np.rint(sdata[j]['t']/(1000/self.frq/2))
+                    
                     if sensor==4:
                         self.gyro_x.append(x)
                         self.gyro_y.append(y)
@@ -72,6 +77,15 @@ class sensorData:
                         self.grav_y.append(y)
                         self.grav_z.append(z)
                         self.grav_time.append(time)
+                    if sensor==15:
+                        x,y,z,theta=sdata[j]['d']
+                        time=np.rint(sdata[j]['t']/(1000/self.frq/2))
+                        self.rv_x.append(x)
+                        self.rv_y.append(y)
+                        self.rv_z.append(z)
+                        self.rv_t.append(theta)
+                        self.rv_time.append(time)
+
         print(len(self.gyro_x),len(self.lin_x),len(self.grav_x))
         sortIndex = np.argsort(self.gyro_time)
         self.gyro_time=[self.gyro_time[i] for i in sortIndex]
@@ -91,10 +105,18 @@ class sensorData:
         self.grav_y = [self.grav_y[i] for i in sortIndex]
         self.grav_z = [self.grav_z[i] for i in sortIndex]
         
-        self.gyro_time,self.gyro_x,self.gyro_y,self.gyro_z=self.remove_duplicateData(self.gyro_time,self.gyro_x,self.gyro_y,self.gyro_z)
-        self.lin_time,self.lin_x,self.lin_y,self.lin_z=self.remove_duplicateData(self.lin_time,self.lin_x,self.lin_y,self.lin_z)
-        self.grav_time,self.grav_x,self.grav_y,self.grav_z=self.remove_duplicateData(self.grav_time,self.grav_x,self.grav_y,self.grav_z)
-        print(len(self.gyro_time),len(self.lin_time),len(self.grav_time))
+        sortIndex = np.argsort(self.rv_time)
+        self.rv_time = [self.rv_time[i] for i in sortIndex]
+        self.rv_x = [self.rv_x[i] for i in sortIndex]
+        self.rv_y = [self.rv_y[i] for i in sortIndex]
+        self.rv_z = [self.rv_z[i] for i in sortIndex]
+        
+        #self.gyro_time,self.gyro_x,self.gyro_y,self.gyro_z=self.remove_duplicateData(self.gyro_time,self.gyro_x,self.gyro_y,self.gyro_z)
+        #self.lin_time,self.lin_x,self.lin_y,self.lin_z=self.remove_duplicateData(self.lin_time,self.lin_x,self.lin_y,self.lin_z)
+        #self.grav_time,self.grav_x,self.grav_y,self.grav_z=self.remove_duplicateData(self.grav_time,self.grav_x,self.grav_y,self.grav_z)
+        #self.rv_time,self.rv_x,self.rv_y,self.rv_z=self.remove_duplicateData(self.rv_time,self.rv_x,self.rv_y,self.rv_z)
+        print("data length :gyro, lin, grav, rv: ")
+        print(len(self.gyro_time),len(self.lin_time),len(self.grav_time),len(self.rv_time))
         
     def remove_duplicateData(self,time,x,y,z):
         index=[]
@@ -113,20 +135,26 @@ class sensorData:
         print('get_validData')
         for i in tqdm(range(len(self.lin_time))):
             time = self.lin_time[i]
-            if (time in self.grav_time):
+            if ((time in self.grav_time) and (time in self.rv_time)):
                 #gyroIndex=self.gyro_time.index(time)
                 gravIndex=self.grav_time.index(time)
+                rvIndex=self.rv_time.index(time)
                 data=[[0,0,0,
                       self.lin_x[i],
                       self.lin_y[i],
                       self.lin_z[i],
                       self.grav_x[gravIndex],
                       self.grav_y[gravIndex],
-                      self.grav_z[gravIndex]
+                      self.grav_z[gravIndex],
+                      self.rv_x[rvIndex],
+                      self.rv_y[rvIndex],
+                      self.rv_z[rvIndex],
+                      self.rv_t[rvIndex]
                      ]]
                 self.valid=np.append(self.valid,data,axis=0)
                 self.validTime.append(time)
-        
+        print('ValidData length')
+        print(len(self.validTime))
     def get_fullData(self):
         window=self.window
         channel=self.channel
@@ -170,12 +198,12 @@ class sensorData:
         np.save(url_raw,self.valid)
         url_raw_csv = url+'_'+str(self.uuid)+'_raw.csv'
         np.savetxt(url_raw_csv,self.valid,delimiter=",")
-        url_norm = url+'_'+str(self.uuid)+'_norm.npy'
-        np.save(url_norm,self.fullData_norm)
+        #url_norm = url+'_'+str(self.uuid)+'_norm.npy'
+        #np.save(url_norm,self.fullData_norm)
 
 
 class sensorDatas:
-    def __init__(self,data_url,window=20,channel=9,uuid=None,userID=None):
+    def __init__(self,data_url,window=20,channel=13,uuid=None,userID=None):
         with open(data_url) as w:
             self.data = json.load(w)
         if uuid!=None:
@@ -199,9 +227,9 @@ class sensorDatas:
             s='working on uuid:'+str(self.uuids[i])
             print(s)
             self.sensorDatas.append(sensorData(data=self.data,uuid=self.uuids[i]))
-            self.fullDatas=np.append(self.fullDatas,self.sensorDatas[i].fullData_norm,axis=0)      # all data for training
+            #self.fullDatas=np.append(self.fullDatas,self.sensorDatas[i].fullData_norm,axis=0)      # all data for training
             self.sensorDatas[i].save(fileName)
-            self.valid=np.append(self.valid,self.sensorDatas[i].validRaw,axis=0)
+            self.valid=np.append(self.valid,self.sensorDatas[i].valid,axis=0)
         
         np.save(fileName+'.npy',self.fullDatas)
         np.savetxt(fileName+'_raw.csv',self.valid,delimiter=",")
@@ -222,6 +250,6 @@ class sensorDatas:
         return userID
 
 if __name__ =='__main__':
-    data_url=r'C:\Users\Guo\Downloads\PSDSData (31).json'
+    data_url=r'C:\Users\Guo\Downloads\PSDSData (32).json'
     datas=sensorDatas(data_url)#,uuid='3b9d2af8cebfb9d8')
     
