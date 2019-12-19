@@ -100,17 +100,7 @@ venv.bak/
 # mkdocs documentation
 /site
 
-# mypy
-.mypy_cache/
-*.npy
-*.pb
-*.h5
-*.csv
-*.annotation
-*.annotation~
-*.hdf5
-*.tflite
-tmp/
+
 *.npz
 *.nova
 *.cvs
