@@ -103,5 +103,14 @@ venv.bak/
 
 *.npz
 *.nova
-*.cvs
+*.csv
 *.zip
+
+# mypy
+.mypy_cache/
+*.npy
+*.pb
+*.h5
+*.hdf5
+*.annotation~
+tmp/
